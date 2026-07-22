@@ -1,13 +1,11 @@
 import argparse
 import os
 import json
-from typing import List
 import jsonlines
 from tqdm import tqdm
 import time
 import random
 import concurrent
-import copy
 from utils.register import registry, register_class
 
 
@@ -75,7 +73,9 @@ class CollaborativeConsultation:
 
 
     def run(self):
+        # 移除已处理过的患者，避免重复诊断
         self.remove_processed_patients()
+        # 遍历所有待诊断患者，逐个进行多医生协作会诊
         for patient in tqdm(self.patients):
             self._run(patient)
     
@@ -169,6 +169,7 @@ class CollaborativeConsultation:
         self.save_info(diagnosis_info)
 
     def remove_processed_patients(self):
+        # 从输出文件中读取已完成诊断的患者 ID
         processed_patient_ids = {}
         if os.path.exists(self.save_path):
             with jsonlines.open(self.save_path, "r") as f:
@@ -176,11 +177,13 @@ class CollaborativeConsultation:
                     processed_patient_ids[obj["patient_id"]] = 1
             f.close()
 
+        # 逆序遍历患者列表，移除已处理过的患者
         patient_num = len(self.patients)
         for i, patient in enumerate(self.patients[::-1]):
             if processed_patient_ids.get(patient.id) is not None:
                 self.patients.pop((patient_num-(i+1)))
         
+        # 打乱顺序，避免每次从相同患者开始
         random.shuffle(self.patients)
         self.patients = self.patients
         print("To-be-diagnosed Patient Number: ", len(self.patients))

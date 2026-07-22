@@ -6,6 +6,8 @@ import jsonlines
 from abc import abstractmethod
 
 
+# 医生基类：定义通用诊断逻辑（记忆管理、对话流程、诊断解析、多医生协作修正）
+# 所有具体医生类继承此类，仅替换引擎和参数配置
 @register_class(alias="Agent.Doctor.Base")
 class Doctor(Agent):
     def __init__(self, engine=None, doctor_info=None, name="A"):
@@ -245,6 +247,7 @@ class Doctor(Agent):
         )
 
 
+# OpenAI GPT医生：使用 OpenAI API（支持官方及第三方代理），需配置 OPENAI_API_KEY
 @register_class(alias="Agent.Doctor.GPT")
 class GPTDoctor(Doctor):
     def __init__(self, args=None, doctor_info=None, name="A"):
@@ -291,6 +294,7 @@ class GPTDoctor(Doctor):
         return response
 
 
+# 智谱ChatGLM医生：使用智谱 AI API，需配置 chatglm_api_key
 @register_class(alias="Agent.Doctor.ChatGLM")
 class ChatGLMDoctor(Doctor):
     def __init__(self, args=None, doctor_info=None, name="A"):
@@ -324,6 +328,7 @@ class ChatGLMDoctor(Doctor):
             self.memories = defaultdict(default_value_factory) 
 
 
+# MiniMax医生：使用 MiniMax API，需配置 minimax_api_key 和 group_id
 @register_class(alias="Agent.Doctor.Minimax")
 class MinimaxDoctor(Doctor):
     def __init__(self, args=None, doctor_info=None, name="A"):
@@ -401,6 +406,7 @@ class MinimaxDoctor(Doctor):
         return responese
 
 
+# 文心一言医生：使用百度文心 API，需配置 wenxin_api_key 和 secret_key
 @register_class(alias="Agent.Doctor.WenXin")
 class WenXinDoctor(Doctor):
     def __init__(self, args=None, doctor_info=None, name="A"):
@@ -456,6 +462,7 @@ class WenXinDoctor(Doctor):
         return responese
 
 
+# Qwen医生：使用阿里DashScope API，支持 qwen-max/plus/turbo 及百炼平台模型
 @register_class(alias="Agent.Doctor.Qwen")
 class QwenDoctor(Doctor):
     def __init__(self, args=None, doctor_info=None, name="A"):
@@ -488,6 +495,7 @@ class QwenDoctor(Doctor):
         return responese
 
 
+# HuatuoGPT医生：使用本地部署的华佗GPT模型（HuggingFace）
 @register_class(alias="Agent.Doctor.HuatuoGPT")
 class HuatuoGPTDoctor(Doctor):
     def __init__(self, args=None, doctor_info=None):
@@ -514,6 +522,7 @@ class HuatuoGPTDoctor(Doctor):
         return responese
 
 
+# HF医生：使用任意本地 HuggingFace 模型，通过 model_name_or_path 指定
 @register_class(alias="Agent.Doctor.HF")
 class HFDoctor(Doctor):
     def __init__(self, args=None, doctor_info=None):

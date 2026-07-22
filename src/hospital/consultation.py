@@ -84,8 +84,10 @@ class Consultation:
         print("To-be-diagnosed Patient Number: ", len(self.patients))
 
     def run(self):
+        # 移除已处理过的患者，支持断点续传
         self.remove_processed_patients()
         # st = time.time()
+        # 逐个对患者进行诊断对话
         for patient in tqdm(self.patients):
             self._diagnosis(patient)
             # patient.forget()
@@ -108,6 +110,7 @@ class Consultation:
         print("duration: ", time.time() - st)
         
     def _diagnosis(self, patient):
+        # 初始化对话历史，以医生开场白为第一轮
         dialog_history = [{"turn": 0, "role": "Doctor", "content": self.doctor.doctor_greet}]
         self.doctor.memorize(("assistant", self.doctor.doctor_greet), patient.id)
         if self.ff_print:
@@ -115,7 +118,9 @@ class Consultation:
             print("--------------------------------------")
             print(dialog_history[-1]["turn"], dialog_history[-1]["role"])
             print(dialog_history[-1]["content"])
+        # 多轮对话循环，直到达到最大轮数或患者说<结束>
         for turn in range(self.max_conversation_turn):
+            # 患者根据上一轮内容生成回复
             patient_response = patient.speak(dialog_history[-1]["role"], dialog_history[-1]["content"])
             dialog_history.append({"turn": turn+1, "role": "Patient", "content": patient_response})
             if self.ff_print:
@@ -123,13 +128,16 @@ class Consultation:
                 print(dialog_history[-1]["turn"], dialog_history[-1]["role"])
                 print(dialog_history[-1]["content"])
             if "<结束>" in patient_response: break
+            # 解析患者回复的对话对象和具体内容
             speak_to, patient_response = patient.parse_role_content(patient_response)
 
             if speak_to == "医生":
+                # 医生回复
                 # doctor_response = input()
                 doctor_response = self.doctor.speak(patient_response, patient.id)
                 dialog_history.append({"turn": turn+1, "role": "Doctor", "content": doctor_response})
             elif speak_to == "检查员":
+                # 检查员出具检查报告，然后医生基于报告回复
                 reporter_response = self.reporter.speak(patient.medical_records, patient_response)
                 dialog_history.append({"turn": turn+1, "role": "Reporter", "content": reporter_response})
                 doctor_response = self.doctor.speak(reporter_response, patient.id)
@@ -145,6 +153,7 @@ class Consultation:
                 print(dialog_history[-1]["turn"], dialog_history[-1]["role"])
                 print(dialog_history[-1]["content"])
         
+        # 对话结束后，要求医生给出诊断总结（症状、检查结果、诊断、依据、治疗方案）
         doctor_response = self.doctor.speak(self.medical_director_summary_query, patient.id)
         dialog_history.append({"turn": turn+1, "role": "Doctor", "content": doctor_response})
         if self.ff_print:
@@ -153,6 +162,7 @@ class Consultation:
             print(dialog_history[-1]["content"])
             # self.evaluate(patient_profile, doctor_response)
 
+        # 封装完整对话信息并保存
         dialog_info = {
             "patient_id": patient.id,
             "doctor": self.args.doctor,
