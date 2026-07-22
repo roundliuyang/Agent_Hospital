@@ -48,7 +48,7 @@ class Consultation:
         self.delay_between_tasks = args.delay_between_tasks
         self.max_workers = args.max_workers
         self.save_path = args.save_path
-        self.ff_print = args.ff_print
+        self.ff_print = args.ff_print  # 是否打印对话过程到控制台
         self.start_time = time.strftime('%Y-%m-%d %H:%M:%S')
 
     @staticmethod

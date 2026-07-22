@@ -482,14 +482,18 @@ class QwenDoctor(Doctor):
         parser.add_argument("--doctor_seed", type=int, default=1)
     
     def speak(self, content, patient_id, save_to_memory=True):
+        # 获取该患者的历史对话记忆
         memories = self.memories[patient_id]
 
+        # 构造消息列表：历史记忆 + 当前用户输入
         messages = [{"role": memory[0], "content": memory[1]} for memory in memories]
         messages.append({"role": "user", "content": content})
+        # 移除开场白中的 assistant 消息，避免 DashScope API 报错（消息必须以 system/user 开头）
         if messages[1].get("role") == "assistant":
             messages.pop(1)
         responese = self.engine.get_response(messages)
         
+        # 将本轮对话存入记忆
         self.memorize(("user", content), patient_id)
         self.memorize(("assistant", responese), patient_id)
         return responese
