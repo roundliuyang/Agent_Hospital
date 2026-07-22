@@ -9,6 +9,8 @@ import concurrent
 from utils.register import registry, register_class
 
 
+# 多医生协作会诊场景：Host(主任医生) + 多个Doctor + Patient + Reporter
+# 主任医生汇总各医生诊断，协调争议，多轮讨论后给出最终诊断
 @register_class(alias="Scenario.CollaborativeConsultation")
 class CollaborativeConsultation:
     def __init__(self, args):

@@ -10,6 +10,8 @@ import random
 from utils.register import register_class, registry
 
 
+# 单医生问诊场景：Doctor + Patient + Reporter 三角色对话
+# 医生与患者多轮对话，必要时患者向检查员请求检查结果，最终医生给出诊断总结
 @register_class(alias="Scenario.Consultation")
 class Consultation:
     def __init__(self, args):
