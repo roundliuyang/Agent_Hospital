@@ -15,6 +15,10 @@ from utils.register import registry, register_class
 class CollaborativeConsultation:
     def __init__(self, args):
         patient_database = json.load(open(args.patient_database))
+        if hasattr(args, 'end_pos') and args.end_pos != -1:
+            patient_database = patient_database[args.start_pos:args.end_pos]
+        elif hasattr(args, 'start_pos'):
+            patient_database = patient_database[args.start_pos:]
         self.args = args
 
         # Load Different Doctor Agents
@@ -72,6 +76,8 @@ class CollaborativeConsultation:
         parser.add_argument("--ff_print", default=False, action="store_true", help="print dialog history")
         parser.add_argument("--parallel", default=False, action="store_true", help="parallel diagnosis")
         parser.add_argument("--discussion_mode", default="Parallel", choices=["Parallel", "Parallel_with_Critique"], help="discussion mode")
+        parser.add_argument("--start_pos", default=0, type=int, help="start position in patient database")
+        parser.add_argument("--end_pos", default=-1, type=int, help="end position in patient database, -1 means all")
 
 
     def run(self):
@@ -95,13 +101,13 @@ class CollaborativeConsultation:
         print("duration: ", time.time() - st)
     
     def _run(self, patient):
-        # host summarizes the symptom and examination from different doctors
-        # and asks patient and reporter to verify and correct the symptom and examination
+        # 第1步：主任医生汇总各医生的症状和检查结果，并向患者/检查员核实差异
         symptom_and_examination = self.host.summarize_symptom_and_examination(
             self.doctors, patient, self.reporter)
         if self.ff_print:
             print("symptom_and_examination: {}".format(symptom_and_examination))
-        # revise the diagnosis
+
+        # 第2步：各医生根据汇总后的症状/检查修正自己的诊断
         diagnosis_in_discussion = []
         diagnosis_in_turn = []
         for i, doctor in enumerate(self.doctors):
@@ -117,19 +123,23 @@ class CollaborativeConsultation:
 
         if self.ff_print:
             print("-"*100)
-        # doctor revise the diagnosis based on the discussion with other doctors
+
+        # 第3步：主任医生判断各医生是否已达成一致
         host_measurement = self.host.measure_agreement(self.doctors, patient, discussion_mode=self.discussion_mode)
         diagnosis_in_discussion.append({
             "turn": 0,
             "diagnosis_in_turn": diagnosis_in_turn,
             "host_critique": host_measurement
         })
+
+        # 第4步：未达成一致时，多轮讨论直到主任医生输出#结束#或达到最大轮数
         if host_measurement != '#结束#':
             for k in range(self.max_discussion_turn):
                 if self.ff_print:
                     print(k, "host", host_measurement)
                 diagnosis_in_turn = []
                 for i, doctor in enumerate(self.doctors):
+                    # 每个医生参考其他医生的诊断和主任医生的点评来修正自己的诊断
                     left_doctors = self.doctors[:i] + self.doctors[i+1:]
                     doctor.revise_diagnosis_by_others(
                         patient, left_doctors, host_measurement, discussion_mode=self.discussion_mode)
@@ -140,6 +150,7 @@ class CollaborativeConsultation:
                     })
                     if self.ff_print:
                         print(k, i, doctor.name, doctor.get_diagnosis_by_patient_id(patient.id, "诊断结果"))
+                # 主任医生再次判断是否达成一致
                 host_measurement = self.host.measure_agreement(self.doctors, patient)
                 diagnosis_in_discussion.append({
                     "turn": k+1,
@@ -153,11 +164,14 @@ class CollaborativeConsultation:
                     break
         else:
             k = -1
-        
+
+        # 第5步：主任医生汇总各医生诊断，输出最终诊断
         final_diagnosis = self.host.summarize_diagnosis(self.doctors, patient)
         if self.ff_print:
             print("host final diagnosis: {}".format(final_diagnosis))
             print("="*100)
+
+        # 第6步：保存诊断结果
         diagnosis_info = {
             "patient_id": patient.id, "final_turn": k+1, "diagnosis": final_diagnosis,
             "symptom_and_examination": symptom_and_examination,
