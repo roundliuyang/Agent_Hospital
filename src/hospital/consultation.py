@@ -128,7 +128,9 @@ class Consultation:
                 print(dialog_history[-1]["turn"], dialog_history[-1]["role"])
                 print(dialog_history[-1]["content"])
             if "<结束>" in patient_response: break
-            # 解析患者回复的对话对象和具体内容
+            # 解析患者回复的对话对象和具体内容。
+            # 原始: <对医生讲> xxx
+            # 对检查员讲> 您好，我需要做头部CT或者MRI检查，还有血液检查。能告诉我这些检查的结果吗？
             speak_to, patient_response = patient.parse_role_content(patient_response)
 
             if speak_to == "医生":

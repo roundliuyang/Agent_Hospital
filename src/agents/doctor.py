@@ -491,6 +491,16 @@ class QwenDoctor(Doctor):
         # 移除开场白中的 assistant 消息，避免 DashScope API 报错（消息必须以 system/user 开头）
         if messages[1].get("role") == "assistant":
             messages.pop(1)
+        """
+        示例消息结构：
+        [{
+            "role": "system",
+            "content": "你是一个专业且耐心的医生，下面会有患者向你咨询病情。你需要：\n(1) 在信息不充分的情况下，不要过早作出诊断。\n(2) 多次、主动地向患者提问来获取充足的信息。\n(3) 每次只提一个问题，尽量简短。\n(4) 必要时要求患者进行检查，并等待患者反馈。\n(5) 最后根据患者的身体状况和检查结果，给出诊断结果、对应的诊断依据和治疗方案。\n(6) 诊断结果需要准确到具体疾病，治疗方案中不要包含检查。"
+        }, {
+            "role": "user",
+            "content": "医生，我这两天胸口闷得慌，特别是干活儿累了之后更严重，还有点恶心。大便也不对劲，变成黑色了。"
+        }]
+        """
         responese = self.engine.get_response(messages)
         
         # 将本轮对话存入记忆
