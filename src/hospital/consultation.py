@@ -14,6 +14,10 @@ from utils.register import register_class, registry
 class Consultation:
     def __init__(self, args):
         patient_database = json.load(open(args.patient_database))
+        if hasattr(args, 'end_pos') and args.end_pos != -1:
+            patient_database = patient_database[args.start_pos:args.end_pos]
+        elif hasattr(args, 'start_pos'):
+            patient_database = patient_database[args.start_pos:]
         self.args = args
         self.doctor = registry.get_class(args.doctor)(
             args,
@@ -60,6 +64,8 @@ class Consultation:
         parser.add_argument("--save_path", default="dialog_history.jsonl", help="save path for dialog history")
         parser.add_argument("--ff_print", default=False, action="store_true", help="print dialog history")
         parser.add_argument("--parallel", default=False, action="store_true", help="parallel diagnosis")
+        parser.add_argument("--start_pos", default=0, type=int, help="start position in patient database")
+        parser.add_argument("--end_pos", default=-1, type=int, help="end position in patient database, -1 means all")
 
     def remove_processed_patients(self):
         processed_patient_ids = {}
